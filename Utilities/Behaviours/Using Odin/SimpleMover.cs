@@ -10,14 +10,14 @@ namespace Archaic.Core.Utilities
         public enum AnimationStyle { Linear, Ease, Custom };
         public enum LoopStyle { Forward, PingPong, Backward };
 
+        // inspector fields
         [Header("General Values")]
         public AnimationStyle animationStyle;
         public LoopStyle loopStyle;
-        //public bool autoLoop = false;
         public float travelTime = 1f;
         [ShowIf("IsUsingCustomAnim")]
         public AnimationCurve customAnimation;
-        public bool localSpace = false;
+        public bool isLocalSpace = false;
 
         [Header("Start Values")]
         public Vector3 startPosition;
@@ -27,104 +27,69 @@ namespace Archaic.Core.Utilities
         public Vector3 endPosition;
         public Quaternion endRotation;
 
-        private float curTime = 0f;
+        // properties
+        public bool IsUsingCustomAnim
+        {
+            get { return AnimationStyle == AnimationStyle.Custom; }
+        }
+
+        // private fields
+        private float currTime = 0f;
+        private float unitTime = 0f;
         private bool isMoving = false;
         private bool isOpen = false;
 
-        private bool IsUsingCustomAnim { get { return animationStyle == AnimationStyle.Custom; } }
-
+        // methods
         public IEnumerator Animate(bool isForward)
         {
             isMoving = true;
-            curTime = 0;
+            currTime = 0;
 
             if (isForward)
-                curTime = 0f;
+                currTime = 0f;
             else
-                curTime = travelTime;
+                currTime = travelTime;
 
-            while (curTime <= travelTime && curTime >= 0)
+            // While current time is within movement range
+            while (currTime <= travelTime && currTime >= 0)
             {
-                switch (animationStyle)
+                // Set unit time based on animation style equation
+                switch (AnimationStyle)
                 {
                     case AnimationStyle.Linear:
-                        if (localSpace)
-                        {
-                            transform.localPosition = Vector3.Lerp(startPosition, endPosition, curTime / travelTime);
-                            transform.localRotation = Quaternion.Slerp(startRotation, endRotation, curTime / travelTime);
-                        }
-                        else
-                        {
-                            transform.position = Vector3.Lerp(startPosition, endPosition, curTime / travelTime);
-                            transform.rotation = Quaternion.Slerp(startRotation, endRotation, curTime / travelTime);
-                        }
+                        unitTime = currTime / travelTime;
                         break;
 
                     case AnimationStyle.Ease:
-                        if (localSpace)
-                        {
-                            transform.localPosition = Vector3.Lerp(startPosition, endPosition, Mathf.SmoothStep(0, 1, curTime / travelTime));
-                            transform.localRotation = Quaternion.Slerp(startRotation, endRotation, Mathf.SmoothStep(0, 1, curTime / travelTime));
-                        }
-                        else
-                        {
-                            transform.position = Vector3.Lerp(startPosition, endPosition, Mathf.SmoothStep(0, 1, curTime / travelTime));
-                            transform.rotation = Quaternion.Slerp(startRotation, endRotation, Mathf.SmoothStep(0, 1, curTime / travelTime));
-                        }
+                        unitTime = Mathf.SmoothStep(0, 1, currTime / travelTime);
                         break;
 
                     case AnimationStyle.Custom:
-                        if (localSpace)
-                        {
-                            transform.localPosition = Vector3.Lerp(startPosition, endPosition, customAnimation.Evaluate(curTime / travelTime));
-                            transform.localRotation = Quaternion.Slerp(startRotation, endRotation, customAnimation.Evaluate(curTime / travelTime));
-                        }
-                        else
-                        {
-                            transform.position = Vector3.Lerp(startPosition, endPosition, customAnimation.Evaluate(curTime / travelTime));
-                            transform.rotation = Quaternion.Slerp(startRotation, endRotation, customAnimation.Evaluate(curTime / travelTime));
-                        }
+                        unitTime = customAnimation.Evaluate(currTime / travelTime);
                         break;
                 }
 
-                if (isForward)
-                    curTime += Time.deltaTime;
-                else
-                    curTime -= Time.deltaTime;
+                // Set transform via local space or world space
+                SetTransform(Vector3.Lerp(startPosition, endPosition, unitTime), Quaternion.Slerp(startRotation, endRotation, unitTime));
 
-                yield return new WaitForEndOfFrame();
+                // Advance time either forwards or backwards
+                if (isForward)
+                    currTime += Time.deltaTime;
+                else
+                    currTime -= Time.deltaTime;
+
+                yield return null; // returns next update
             }
 
+            // Animation has reached it's end
             isMoving = false;
             isOpen = !isOpen;
 
             // Setting to final position incase it hasn't quite reached it yet.
             if (isForward)
-            {
-                if (localSpace)
-                {
-                    transform.localPosition = endPosition;
-                    transform.localRotation = endRotation;
-                }
-                else
-                {
-                    transform.position = endPosition;
-                    transform.rotation = endRotation;
-                }
-            }
+                SetTransform(endPosition, endRotation);
             else
-            {
-                if (localSpace)
-                {
-                    transform.localPosition = startPosition;
-                    transform.localRotation = startRotation;
-                }
-                else
-                {
-                    transform.position = startPosition;
-                    transform.rotation = startRotation;
-                }
-            }
+                SetTransform(startPosition, startRotation);
         }
 
         [Button]
@@ -135,7 +100,7 @@ namespace Archaic.Core.Utilities
 
             StopAllCoroutines();
 
-            switch (loopStyle)
+            switch (LoopStyle)
             {
                 case LoopStyle.Forward:
                     StartCoroutine(Animate(true));
@@ -151,24 +116,24 @@ namespace Archaic.Core.Utilities
 
         public void PlayForward()
         {
-            LoopStyle oldStyle = loopStyle;
-            loopStyle = LoopStyle.Forward;
+            LoopStyle oldStyle = LoopStyle;
+            LoopStyle = LoopStyle.Forward;
             Play();
-            loopStyle = oldStyle;
+            LoopStyle = oldStyle;
         }
 
         public void PlayBackward()
         {
-            LoopStyle oldStyle = loopStyle;
-            loopStyle = LoopStyle.Backward;
+            LoopStyle oldStyle = LoopStyle;
+            LoopStyle = LoopStyle.Backward;
             Play();
-            loopStyle = oldStyle;
+            LoopStyle = oldStyle;
         }
 
         [ButtonGroup]
         public void SetStartValues()
         {
-            if (localSpace)
+            if (isLocalSpace)
             {
                 startPosition = transform.localPosition;
                 startRotation = transform.localRotation;
@@ -183,7 +148,7 @@ namespace Archaic.Core.Utilities
         [ButtonGroup]
         public void SetEndValues()
         {
-            if (localSpace)
+            if (isLocalSpace)
             {
                 endPosition = transform.localPosition;
                 endRotation = transform.localRotation;
@@ -192,6 +157,20 @@ namespace Archaic.Core.Utilities
             {
                 endPosition = transform.position;
                 endRotation = transform.rotation;
+            }
+        }
+
+        private void SetTransform(Vector3 position, Quaternion rotation, bool useLocalSpace)
+        {
+            if (useLocalSpace)
+            {
+                transform.localPosition = position;
+                transform.localRotation = rotation;
+            }
+            else
+            {
+                transform.position = position;
+                transform.rotation = rotation;
             }
         }
     }

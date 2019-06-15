@@ -11,13 +11,16 @@ public class PrefabSpawner : MonoBehaviour
     public enum SpawnMode { SpawnRandom, SpawnAll, SpawnSequential };
 
     public SpawnMode spawnMode;
+    [AssetsOnly]
     public GameObject[] prefabs;
     public bool spawnAsChild = true;
     public Vector3 spawnOffset;
 
     private int spawnIndex = 0;
 
-    [Button]
+    private bool IsPrefabsEmpty { get { return prefabs == null || prefabs.Length <= 0; } }
+
+    [Button(ButtonSizes.Large), DisableIf("IsPrefabsEmpty")]
     public void Spawn()
     {
         if (prefabs == null || prefabs.Length <= 0)

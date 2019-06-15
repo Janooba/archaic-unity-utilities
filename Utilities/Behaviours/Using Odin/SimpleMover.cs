@@ -19,18 +19,20 @@ namespace Archaic.Core.Utilities
         public AnimationCurve customAnimation;
         public bool isLocalSpace = false;
 
-        [Header("Start Values")]
+        [TabGroup("Start Values", GroupID = "Tabs")]
         public Vector3 startPosition;
+        [TabGroup("Start Values", GroupID = "Tabs")]
         public Quaternion startRotation;
 
-        [Header("End Values")]
+        [TabGroup("End Values", GroupID = "Tabs")]
         public Vector3 endPosition;
+        [TabGroup("End Values", GroupID = "Tabs")]
         public Quaternion endRotation;
 
         // properties
         public bool IsUsingCustomAnim
         {
-            get { return AnimationStyle == AnimationStyle.Custom; }
+            get { return animationStyle == AnimationStyle.Custom; }
         }
 
         // private fields
@@ -38,6 +40,7 @@ namespace Archaic.Core.Utilities
         private float unitTime = 0f;
         private bool isMoving = false;
         private bool isOpen = false;
+        private Coroutine activeRoutine;
 
         // methods
         public IEnumerator Animate(bool isForward)
@@ -54,7 +57,7 @@ namespace Archaic.Core.Utilities
             while (currTime <= travelTime && currTime >= 0)
             {
                 // Set unit time based on animation style equation
-                switch (AnimationStyle)
+                switch (animationStyle)
                 {
                     case AnimationStyle.Linear:
                         unitTime = currTime / travelTime;
@@ -70,7 +73,7 @@ namespace Archaic.Core.Utilities
                 }
 
                 // Set transform via local space or world space
-                SetTransform(Vector3.Lerp(startPosition, endPosition, unitTime), Quaternion.Slerp(startRotation, endRotation, unitTime));
+                SetTransform(Vector3.Lerp(startPosition, endPosition, unitTime), Quaternion.Slerp(startRotation, endRotation, unitTime), isLocalSpace);
 
                 // Advance time either forwards or backwards
                 if (isForward)
@@ -87,50 +90,53 @@ namespace Archaic.Core.Utilities
 
             // Setting to final position incase it hasn't quite reached it yet.
             if (isForward)
-                SetTransform(endPosition, endRotation);
+                SetTransform(endPosition, endRotation, isLocalSpace);
             else
-                SetTransform(startPosition, startRotation);
+                SetTransform(startPosition, startRotation, isLocalSpace);
         }
 
-        [Button]
+        [Button(ButtonSizes.Medium)]
+        [DisableInEditorMode]
         public void Play()
         {
             if (isMoving)
                 return;
 
-            StopAllCoroutines();
+            if (activeRoutine != null)
+                StopCoroutine(activeRoutine);
 
-            switch (LoopStyle)
+            switch (loopStyle)
             {
                 case LoopStyle.Forward:
-                    StartCoroutine(Animate(true));
+                    activeRoutine = StartCoroutine(Animate(true));
                     break;
                 case LoopStyle.PingPong:
-                    StartCoroutine(Animate(!isOpen));
+                    activeRoutine = StartCoroutine(Animate(!isOpen));
                     break;
                 case LoopStyle.Backward:
-                    StartCoroutine(Animate(false));
+                    activeRoutine = StartCoroutine(Animate(false));
                     break;
             }
         }
 
         public void PlayForward()
         {
-            LoopStyle oldStyle = LoopStyle;
-            LoopStyle = LoopStyle.Forward;
+            LoopStyle oldStyle = loopStyle;
+            loopStyle = LoopStyle.Forward;
             Play();
-            LoopStyle = oldStyle;
+            loopStyle = oldStyle;
         }
 
         public void PlayBackward()
         {
-            LoopStyle oldStyle = LoopStyle;
-            LoopStyle = LoopStyle.Backward;
+            LoopStyle oldStyle = loopStyle;
+            loopStyle = LoopStyle.Backward;
             Play();
-            LoopStyle = oldStyle;
+            loopStyle = oldStyle;
         }
 
-        [ButtonGroup]
+        [TabGroup("Start Values", GroupID = "Tabs")]
+        [ButtonGroup("Tabs/Start Values/StartButtons")]
         public void SetStartValues()
         {
             if (isLocalSpace)
@@ -145,7 +151,24 @@ namespace Archaic.Core.Utilities
             }
         }
 
-        [ButtonGroup]
+        [TabGroup("Start Values", GroupID = "Tabs")]
+        [ButtonGroup("Tabs/Start Values/StartButtons")]
+        public void MoveToStartValues()
+        {
+            if (isLocalSpace)
+            {
+                transform.localPosition = startPosition;
+                transform.localRotation = startRotation;
+            }
+            else
+            {
+                transform.position = startPosition;
+                transform.rotation = startRotation;
+            }
+        }
+
+        [TabGroup("End Values", GroupID = "Tabs"), Button]
+        [ButtonGroup("Tabs/End Values/EndButtons")]
         public void SetEndValues()
         {
             if (isLocalSpace)
@@ -157,6 +180,22 @@ namespace Archaic.Core.Utilities
             {
                 endPosition = transform.position;
                 endRotation = transform.rotation;
+            }
+        }
+
+        [TabGroup("End Values", GroupID = "Tabs"), Button]
+        [ButtonGroup("Tabs/End Values/EndButtons")]
+        public void MoveToEndValues()
+        {
+            if (isLocalSpace)
+            {
+                transform.localPosition = endPosition;
+                transform.localRotation = endRotation;
+            }
+            else
+            {
+                transform.position = endPosition;
+                transform.rotation = endRotation;
             }
         }
 

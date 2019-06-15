@@ -1,61 +1,63 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
-
+﻿using UnityEngine;
 using Archaic.Core.Extensions;
-
 using Sirenix.OdinInspector;
 
-public class PrefabSpawner : MonoBehaviour
+namespace Archaic.Core.Utilities
 {
-    public enum SpawnMode { SpawnRandom, SpawnAll, SpawnSequential };
-
-    public SpawnMode spawnMode;
-    [AssetsOnly]
-    public GameObject[] prefabs;
-    public bool spawnAsChild = true;
-    public Vector3 spawnOffset;
-
-    private int spawnIndex = 0;
-
-    private bool IsPrefabsEmpty { get { return prefabs == null || prefabs.Length <= 0; } }
-
-    [Button(ButtonSizes.Large), DisableIf("IsPrefabsEmpty")]
-    public void Spawn()
+    /// <summary>
+    /// A simple script used to spawn prefabs from a list. This will not manage children spawned in any way, so be careful.
+    /// </summary>
+    public class PrefabSpawner : MonoBehaviour
     {
-        if (prefabs == null || prefabs.Length <= 0)
-            return;
+        public enum SpawnMode { SpawnRandom, SpawnAll, SpawnSequential };
 
-        switch (spawnMode)
+        public SpawnMode spawnMode;
+        [AssetsOnly]
+        public GameObject[] prefabs;
+        public bool spawnAsChild = true;
+        public Vector3 spawnOffset;
+
+        private int spawnIndex = 0;
+
+        private bool IsPrefabsEmpty { get { return prefabs == null || prefabs.Length <= 0; } }
+
+        [Button(ButtonSizes.Large), DisableIf("IsPrefabsEmpty")]
+        public void Spawn()
         {
-            case SpawnMode.SpawnRandom:
-                SpawnPrefab(prefabs.GetRandom());
-                break;
+            if (prefabs == null || prefabs.Length <= 0)
+                return;
 
-            case SpawnMode.SpawnAll:
-                for (int i = 0; i < prefabs.Length; i++)
-                {
-                    SpawnPrefab(prefabs[i]);
-                }
-                break;
+            switch (spawnMode)
+            {
+                case SpawnMode.SpawnRandom:
+                    SpawnPrefab(prefabs.GetRandom());
+                    break;
 
-            case SpawnMode.SpawnSequential:
-                SpawnPrefab(prefabs[spawnIndex++]);
-                if (spawnIndex >= prefabs.Length)
-                    spawnIndex = 0;
-                break;
+                case SpawnMode.SpawnAll:
+                    for (int i = 0; i < prefabs.Length; i++)
+                    {
+                        SpawnPrefab(prefabs[i]);
+                    }
+                    break;
+
+                case SpawnMode.SpawnSequential:
+                    SpawnPrefab(prefabs[spawnIndex++]);
+                    if (spawnIndex >= prefabs.Length)
+                        spawnIndex = 0;
+                    break;
+            }
         }
-    }
 
-    private void SpawnPrefab(GameObject objectToSpawn)
-    {
-        if (spawnAsChild)
+        private void SpawnPrefab(GameObject objectToSpawn)
         {
-            Instantiate(objectToSpawn, transform.position + spawnOffset, Quaternion.identity, transform);
-        }
-        else // Spawn as sibling
-        {
-            Instantiate(objectToSpawn, transform.position + spawnOffset, Quaternion.identity, transform.parent);
+            if (spawnAsChild)
+            {
+                Instantiate(objectToSpawn, transform.position + spawnOffset, Quaternion.identity, transform);
+            }
+            else // Spawn as sibling
+            {
+                Instantiate(objectToSpawn, transform.position + spawnOffset, Quaternion.identity, transform.parent);
+            }
         }
     }
 }

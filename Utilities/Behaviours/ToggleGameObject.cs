@@ -2,19 +2,24 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ToggleGameObject : MonoBehaviour
+namespace Archaic.Core.Utilities
 {
-    public GameObject objectToToggle;
-
     /// <summary>
-    /// Mostly used with the Unity Event system in-editor. Toggles the active state of this GameObject.
+    /// For use with UnityEvents. Allows the given GameObject to be toggled.
     /// </summary>
-    public void ToggleActive()
+    public class ToggleGameObject : MonoBehaviour
     {
-        if (objectToToggle)
-            objectToToggle.SetActive(!objectToToggle.activeSelf);
-        else
-            gameObject.SetActive(!gameObject.activeSelf);
-    }
+        public GameObject objectToToggle;
 
+        /// <summary>
+        /// Mostly used with the Unity Event system in-editor. Toggles the active state of this GameObject.
+        /// </summary>
+        public void ToggleActive()
+        {
+            if (objectToToggle)
+                objectToToggle.SetActive(!objectToToggle.activeSelf);
+            else
+                gameObject.SetActive(!gameObject.activeSelf);
+        }
+    }
 }

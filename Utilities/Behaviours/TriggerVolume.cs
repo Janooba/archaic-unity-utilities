@@ -4,58 +4,67 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 
-public class TriggerVolume : MonoBehaviour
+namespace Archaic.Core.Utilities
 {
-    public string[] QueryTags;
-
-    public UnityEvent onFirstEnter;
-    public UnityEvent onEnter;
-    public UnityEvent onExit;
-    public UnityEvent onLastExit;
-
-    private List<GameObject> objectsInside = new List<GameObject>();
-
-    private void Start()
+    /// <summary>
+    /// A simple script used to trigger UnityEvents on trigger events.
+    /// </summary>
+    public class TriggerVolume : MonoBehaviour
     {
-        QueryTags = QueryTags.Where(x => x.Trim().Length > 0).ToArray();
-    }
+        public string[] queryTags;
 
-    private void OnTriggerEnter(Collider other)
-    {
-        if (DoesTagMatch(other))
+        public UnityEvent onFirstEnter;
+        public UnityEvent onEnter;
+        public UnityEvent onExit;
+        public UnityEvent onLastExit;
+
+        private List<GameObject> objectsInside = new List<GameObject>();
+
+        private void Start()
         {
-            if (objectsInside.Count == 0)
-                onFirstEnter.Invoke();
-
-            onEnter.Invoke();
-            objectsInside.Add(other.gameObject);
+            queryTags = queryTags
+                .Where(x => x != null)              // Removing any null entries
+                .Where(x => x.Trim().Length > 0)    // Trimming empty space before and after tags
+                .ToArray();
         }
-    }
 
-    private void OnTriggerExit(Collider other)
-    {
-        if (objectsInside.Contains(other.gameObject))
+        private void OnTriggerEnter(Collider other)
         {
-            objectsInside.Remove(other.gameObject);
-            onExit.Invoke();
-
-            if (objectsInside.Count == 0)
-                onLastExit.Invoke();
-        }
-    }
-
-    private bool DoesTagMatch(Collider other)
-    {
-        bool matched = false;
-
-        if (QueryTags.Length == 0)
-            matched = true;
-        else
-            for (int i = 0; i < QueryTags.Length; i++)
+            if (DoesTagMatch(other))
             {
-                if (other.tag == QueryTags[i].Trim())
-                    matched = true;
+                if (objectsInside.Count == 0)
+                    onFirstEnter.Invoke();
+
+                onEnter.Invoke();
+                objectsInside.Add(other.gameObject);
             }
-        return matched;
+        }
+
+        private void OnTriggerExit(Collider other)
+        {
+            if (objectsInside.Contains(other.gameObject))
+            {
+                objectsInside.Remove(other.gameObject);
+                onExit.Invoke();
+
+                if (objectsInside.Count == 0)
+                    onLastExit.Invoke();
+            }
+        }
+
+        private bool DoesTagMatch(Collider other)
+        {
+            bool matched = false;
+
+            if (queryTags.Length == 0)
+                matched = true;
+            else
+                for (int i = 0; i < queryTags.Length; i++)
+                {
+                    if (other.tag == queryTags[i].Trim())
+                        matched = true;
+                }
+            return matched;
+        }
     }
 }

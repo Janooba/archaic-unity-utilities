@@ -1,10 +1,12 @@
 ﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using Sirenix.OdinInspector;
 
 namespace Archaic.Core.Utilities
 {
+    /// <summary>
+    /// A simple script to handle moving between two positions/rotations. Great for prototyping or quick tweens.
+    /// </summary>
     public class SimpleMover : MonoBehaviour
     {
         public enum AnimationStyle { Linear, Ease, Custom };

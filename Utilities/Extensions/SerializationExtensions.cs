@@ -9,7 +9,6 @@ namespace Archaic.Core.Extensions
 {
     public static class SerializationExtensions
     {
-        #region Serialization Extensions
         /// <summary>
         /// Serialize the object into a string.
         /// </summary>
@@ -70,6 +69,5 @@ namespace Archaic.Core.Extensions
             }
             return deserializedObj;
         }
-        #endregion
     }
 }

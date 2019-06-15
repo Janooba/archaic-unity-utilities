@@ -1,31 +1,34 @@
 ﻿using UnityEngine;
 
-/// <summary>
-/// Simple script used for disposable objects that should destroy themselves after a set time.
-/// </summary>
-public class Suicide : MonoBehaviour
+namespace Archaic.Core.Utilities
 {
-    public bool triggerOnStart = true;
-    public float delay = 0f;
-
-	void Start ()
+    /// <summary>
+    /// Simple script used for disposable objects that should destroy themselves after a set time.
+    /// </summary>
+    public class Suicide : MonoBehaviour
     {
-        if (triggerOnStart)
+        public bool triggerOnStart = true;
+        public float delay = 0f;
+
+        void Start()
         {
-            Trigger();
+            if (triggerOnStart)
+            {
+                Trigger();
+            }
         }
-	}
 
-    public void Trigger()
-    {
-        if (delay > 0f)
-            Invoke("Kill", delay);
-        else
-            Kill();
-    }
+        public void Trigger()
+        {
+            if (delay > 0f)
+                Invoke("Kill", delay);
+            else
+                Kill();
+        }
 
-    public void Kill()
-    {
-        Destroy(gameObject);
+        public void Kill()
+        {
+            Destroy(gameObject);
+        }
     }
 }

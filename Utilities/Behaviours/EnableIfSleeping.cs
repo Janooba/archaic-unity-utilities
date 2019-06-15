@@ -1,27 +1,30 @@
 using UnityEngine;
 
-/// <summary>
-/// Enables a behaviour when a rigidbody settles movement otherwise disables the behaviour.
-/// </summary>
-public class EnableIfSleeping : MonoBehaviour
+namespace Archaic.Core.Utilities
 {
-    public Behaviour Behaviour;
-    private Rigidbody _rigidbody;
-
-    void Start()
+    /// <summary>
+    /// Enables a behaviour when a rigidbody settles movement otherwise disables the behaviour.
+    /// </summary>
+    public class EnableIfSleeping : MonoBehaviour
     {
-        _rigidbody = GetComponent<Rigidbody>();
-    }
+        public Behaviour Behaviour;
+        private Rigidbody _rigidbody;
 
-    void Update()
-    {
-        if (_rigidbody == null || Behaviour == null)
-            return;
+        void Start()
+        {
+            _rigidbody = GetComponent<Rigidbody>();
+        }
 
-        if (_rigidbody.IsSleeping() && !Behaviour.enabled)
-            Behaviour.enabled = true;
+        void Update()
+        {
+            if (_rigidbody == null || Behaviour == null)
+                return;
 
-        if (!_rigidbody.IsSleeping() && Behaviour.enabled)
-            Behaviour.enabled = false;
+            if (_rigidbody.IsSleeping() && !Behaviour.enabled)
+                Behaviour.enabled = true;
+
+            if (!_rigidbody.IsSleeping() && Behaviour.enabled)
+                Behaviour.enabled = false;
+        }
     }
 }

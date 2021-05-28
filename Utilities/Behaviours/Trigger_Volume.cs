@@ -9,24 +9,15 @@ namespace Archaic.Core.Utilities
     /// <summary>
     /// A simple script used to trigger UnityEvents on trigger events.
     /// </summary>
-    public class TriggerVolume : MonoBehaviour
+    public class Trigger_Volume : Trigger
     {
-        public string[] queryTags;
-
+        public bool triggerOnce;
         public UnityEvent onFirstEnter;
         public UnityEvent onEnter;
         public UnityEvent onExit;
         public UnityEvent onLastExit;
 
         private List<GameObject> objectsInside = new List<GameObject>();
-
-        private void Start()
-        {
-            queryTags = queryTags
-                .Where(x => x != null)              // Removing any null entries
-                .Where(x => x.Trim().Length > 0)    // Trimming empty space before and after tags
-                .ToArray();
-        }
 
         private void OnTriggerEnter(Collider other)
         {
@@ -36,6 +27,8 @@ namespace Archaic.Core.Utilities
                     onFirstEnter.Invoke();
 
                 onEnter.Invoke();
+                if (triggerOnce)
+                    Destroy(gameObject);
                 objectsInside.Add(other.gameObject);
             }
         }
@@ -50,21 +43,6 @@ namespace Archaic.Core.Utilities
                 if (objectsInside.Count == 0)
                     onLastExit.Invoke();
             }
-        }
-
-        private bool DoesTagMatch(Collider other)
-        {
-            bool matched = false;
-
-            if (queryTags.Length == 0)
-                matched = true;
-            else
-                for (int i = 0; i < queryTags.Length; i++)
-                {
-                    if (other.tag == queryTags[i].Trim())
-                        matched = true;
-                }
-            return matched;
         }
     }
 }

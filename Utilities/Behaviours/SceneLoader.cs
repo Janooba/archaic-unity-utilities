@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 
 namespace Archaic.Core.Utilities
@@ -12,12 +14,24 @@ namespace Archaic.Core.Utilities
     {
         [Tooltip("The scene that handles your game logic. This scene will be kept loaded at all times.")]
         public string logicScene;
-        [Tooltip("The scene you would like loaded up as soon as the game starts, or if no other scene is loaded in the editor.")]
+        [Tooltip("The scene you would like loaded up as soon as the game starts, or if no other scene is loaded in the editor. Leave blank if you do not want to load anything.")]
         public string startupScene;
 
-        private List<Scene> loadedScenes = new List<Scene>();
+        /// <summary>
+        /// If there is a scene loaded other than the gamelogic, returns true.
+        /// </summary>
+        public bool IsLevelLoaded => loadedScenes.Count > 0;
 
-        protected virtual void Start()
+        private List<Scene> loadedScenes = new List<Scene>();
+        private List<Action> callbacksToActivate = new List<Action>();
+
+        public void AddSceneLoadCallback(Action callback)
+        {
+            if (callback != null)
+                callbacksToActivate.Add(callback);
+        }
+
+        public void Initialize()
         {
             SceneManager.sceneLoaded += OnSceneLoaded;
             SceneManager.sceneUnloaded += OnSceneUnloaded;
@@ -30,7 +44,7 @@ namespace Archaic.Core.Utilities
             }
 
             // Loads the world scene if nothing else is loaded
-            if (startupScene != null && loadedScenes.Count == 0)
+            if (!string.IsNullOrEmpty(startupScene) && loadedScenes.Count == 0)
             {
                 SceneManager.LoadScene(startupScene, LoadSceneMode.Additive);
             }
@@ -48,7 +62,7 @@ namespace Archaic.Core.Utilities
         /// Unloads all scenes except for logic scenes, and loads in the given scene.
         /// </summary>
         /// <param name="sceneName"></param>
-        public void LoadScene(string sceneName)
+        public void LoadScene(string sceneName, Action callback)
         {
             if (!Application.CanStreamedLevelBeLoaded(sceneName))
             {
@@ -58,6 +72,9 @@ namespace Archaic.Core.Utilities
 
             if (loadedScenes.Count > 0)
                 UnloadAllScenes();
+
+            if (callback != null)
+                callbacksToActivate.Add(callback);
 
             SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
         }
@@ -80,8 +97,13 @@ namespace Archaic.Core.Utilities
             if (loadedScene.name != logicScene) // As long as the loaded scene ISN'T this scene, the gamelogic...
             {
                 loadedScenes.Add(loadedScene);
-
                 SceneManager.SetActiveScene(loadedScene);
+
+                foreach (var action in callbacksToActivate)
+                {
+                    action.Invoke();
+                }
+                callbacksToActivate.Clear();
             }
         }
 

@@ -17,6 +17,16 @@ namespace Archaic.Core.Utilities
         public bool spawnAsChild = true;
         public Vector3 spawnOffset;
 
+        public bool randomOffset;
+        [ShowIf("randomOffset")]
+        public float randomOffsetRadius = 0f;
+
+        public bool randomRotation;
+
+        public bool autoKill;
+        [ShowIf("autoKill")]
+        public float killDelay;
+
         private int spawnIndex = 0;
 
         private bool IsPrefabsEmpty { get { return prefabs == null || prefabs.Length <= 0; } }
@@ -50,14 +60,45 @@ namespace Archaic.Core.Utilities
 
         private void SpawnPrefab(GameObject objectToSpawn)
         {
+            Vector3 position = transform.position + spawnOffset;
+            Quaternion rotation = Quaternion.identity;
+
+            if (randomOffset)
+            {
+                position += Random.insideUnitSphere * randomOffsetRadius;
+            }
+
+            if (randomRotation)
+            {
+                rotation *= Random.rotationUniform;
+            }
+
+            GameObject spawnedObject;
             if (spawnAsChild)
             {
-                Instantiate(objectToSpawn, transform.position + spawnOffset, Quaternion.identity, transform);
+                spawnedObject = Instantiate(objectToSpawn, position, rotation, transform);
             }
             else // Spawn as sibling
             {
-                Instantiate(objectToSpawn, transform.position + spawnOffset, Quaternion.identity, transform.parent);
+                spawnedObject = Instantiate(objectToSpawn, position, rotation, transform.parent);
             }
+
+            if (autoKill)
+            {
+                spawnedObject.AddComponent<Suicide>().delay = killDelay;
+            }
+        }
+
+        private void OnDrawGizmos()
+        {
+            Gizmos.color = Color.cyan;
+            DebugExtension.DrawPoint(transform.position + spawnOffset, 0.5f);
+        }
+
+        private void OnDrawGizmosSelected()
+        {
+            Gizmos.color = Color.cyan;
+            Gizmos.DrawWireSphere(transform.position + spawnOffset, randomOffsetRadius);
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -25,6 +26,21 @@ namespace Archaic.Core.Extensions
         }
 
         /// <summary>
+        /// Gets the components in either this object, or a parent.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="behaviour"></param>
+        /// <returns></returns>
+        public static T[] GetComponentsInThisOrParent<T>(this Component behaviour)
+        {
+            T[] components = behaviour.GetComponents<T>();
+
+            components = components.Union<T>(behaviour.GetComponentsInParent<T>()).ToArray();
+
+            return components;
+        }
+
+        /// <summary>
         /// Gets the component in either this object, or a parent.
         /// </summary>
         /// <typeparam name="T"></typeparam>
@@ -39,9 +55,86 @@ namespace Archaic.Core.Extensions
 
             return component;
         }
+
+        /// <summary>
+        /// Gets the components in either this object, or a parent.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="behaviour"></param>
+        /// <returns></returns>
+        public static T[] GetComponentsInThisOrChildren<T>(this Component behaviour)
+        {
+            T[] components = behaviour.GetComponents<T>();
+            components = components.Union<T>(behaviour.GetComponentsInChildren<T>()).ToArray();
+
+            return components;
+        }
         #endregion
 
         #region GameObject Extensions
+
+        /// <summary>
+        /// Gets the component in either this object, or a parent.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="behaviour"></param>
+        /// <returns></returns>
+        public static T GetComponentInThisOrParent<T>(this GameObject behaviour)
+        {
+            T component = behaviour.GetComponent<T>();
+
+            if (component == null)
+                component = behaviour.GetComponentInParent<T>();
+
+            return component;
+        }
+
+        /// <summary>
+        /// Gets the components in either this object, or a parent.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="behaviour"></param>
+        /// <returns></returns>
+        public static T[] GetComponentsInThisOrParent<T>(this GameObject behaviour)
+        {
+            T[] components = behaviour.GetComponents<T>();
+            components = components.Union<T>(behaviour.GetComponentsInParent<T>()).ToArray();
+
+            return components;
+        }
+
+        /// <summary>
+        /// Gets the component in either this object, or a parent.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="behaviour"></param>
+        /// <returns></returns>
+        public static T GetComponentInThisOrChildren<T>(this GameObject behaviour)
+        {
+            T component = behaviour.GetComponent<T>();
+
+            if (component == null)
+                component = behaviour.GetComponentInChildren<T>();
+
+            return component;
+        }
+
+        /// <summary>
+        /// Gets the components in either this object, or a parent.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="behaviour"></param>
+        /// <returns></returns>
+        public static T[] GetComponentsInThisOrChildren<T>(this GameObject behaviour)
+        {
+            T[] components = behaviour.GetComponents<T>();
+
+            if (components == null)
+                components = components.Union<T>(behaviour.GetComponentsInChildren<T>()).ToArray();
+
+            return components;
+        }
+
         /// <summary>
         /// Sets the layer of this gameobject, and all of its children
         /// </summary>
@@ -197,24 +290,36 @@ namespace Archaic.Core.Extensions
             }
         }
 
-        public static void Shake(this Transform trans, float shakeAmt)
+        /// <summary>
+        /// Punches the transforms rotation randomly
+        /// </summary>
+        /// <param name="trans"></param>
+        /// <param name="shakeAmt">The max degrees to punch (may not always punch this hard)</param>
+        /// <param name="shakeZ">Should the Z rotation be punched?</param>
+        public static void Shake(this Transform trans, float shakeAmt, bool shakeZ = true)
         {
             Quaternion randomRot = Quaternion.identity;
 
             randomRot = UnityEngine.Random.rotation;
+            if (!shakeZ)
+            {
+                randomRot = Quaternion.Euler(new Vector3(randomRot.eulerAngles.x, randomRot.eulerAngles.y, 0));
+            }
+
             randomRot = Quaternion.RotateTowards(trans.rotation, randomRot, shakeAmt);
             randomRot = Quaternion.Slerp(trans.rotation, randomRot, shakeAmt * Time.deltaTime);
 
             trans.rotation = randomRot;
         }
 
-        public static IEnumerator ShakeRoutine(this Transform trans, float shakeAmt, float length)
+        public static IEnumerator ShakeRoutine(this Transform trans, float shakeAmt, float length, bool taper = false, bool shakeZ = true)
         {
             float time = 0;
             while (time < length)
             {
                 time += Time.deltaTime;
-                trans.Shake(shakeAmt);
+                trans.Shake(shakeAmt, shakeZ);
+                shakeAmt -= Mathf.Max(length * Time.deltaTime, 0);
                 yield return new WaitForEndOfFrame();
             }
         }
@@ -257,5 +362,46 @@ namespace Archaic.Core.Extensions
             }
         }
         #endregion
+
+        /// <summary>
+        /// Invokes the given method after 'time' in-game time has passed.
+        /// </summary>
+        /// <param name="me"></param>
+        /// <param name="theDelegate"></param>
+        /// <param name="time"></param>
+        public static void Invoke(this MonoBehaviour me, Action theDelegate, float time, bool useRealTime = false)
+        {
+            me.StartCoroutine(ExecuteAfterTime(theDelegate, time, useRealTime));
+        }
+
+        /// <summary>
+        /// Invokes the given method after 'frames' number of frames.
+        /// </summary>
+        /// <param name="me"></param>
+        /// <param name="theDelegate"></param>
+        /// <param name="frames"></param>
+        public static void Invoke(this MonoBehaviour me, Action theDelegate, int frames)
+        {
+            me.StartCoroutine(ExecuteAfterFrame(theDelegate, frames));
+        }
+
+        private static IEnumerator ExecuteAfterTime(Action theDelegate, float delay, bool useRealTime = false)
+        {
+            if (useRealTime)
+                yield return new WaitForSecondsRealtime(delay);
+            else
+                yield return new WaitForSeconds(delay);
+            theDelegate();
+        }
+
+        private static IEnumerator ExecuteAfterFrame(Action theDelegate, int framesToDelay)
+        {
+            for (int i = 0; i < framesToDelay; i++)
+            {
+                yield return null;
+            }
+
+            theDelegate();
+        }
     }
 }
